@@ -6,23 +6,267 @@
     <title>Crantex Content Publishing</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a; background: #fafafa; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .card { max-width: 480px; padding: 48px; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; }
-        h1 { font-size: 22px; margin-bottom: 12px; }
-        p { color: #666; margin-bottom: 24px; line-height: 1.6; }
-        .links { display: flex; gap: 16px; justify-content: center; }
-        .links a { color: #009688; text-decoration: none; font-weight: 500; }
-        .links a:hover { text-decoration: underline; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a; background: #f5f5f5; min-height: 100vh; }
+        .header { background: #000; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+        .header .logo { width: 32px; height: 32px; background: #25F4EE; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+        .header h1 { font-size: 16px; font-weight: 600; }
+        .container { max-width: 640px; margin: 40px auto; padding: 0 24px; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 32px; margin-bottom: 24px; }
+        .card h2 { font-size: 18px; margin-bottom: 16px; }
+        .card p { color: #666; margin-bottom: 16px; line-height: 1.6; }
+        .status { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+        .status.connected { background: #e8f5e9; color: #2e7d32; }
+        .status.disconnected { background: #fff3e0; color: #e65100; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .connected .status-dot { background: #4caf50; }
+        .disconnected .status-dot { background: #ff9800; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-tiktok { background: #000; color: #fff; }
+        .btn-tiktok:hover { background: #222; }
+        .btn-post { background: #25F4EE; color: #000; }
+        .btn-post:hover { background: #1ad9d4; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-tiktok + .btn-tiktok { margin-left: 0; margin-top: 12px; display: block; }
+        .creator-info { background: #f5f5f5; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .creator-info .avatar { width: 48px; height: 48px; border-radius: 50%; margin-bottom: 8px; }
+        .creator-info .name { font-weight: 600; font-size: 16px; }
+        .creator-info .username { color: #666; font-size: 14px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-group textarea { height: 80px; resize: vertical; }
+        .flow-steps { counter-reset: step; }
+        .flow-step { counter-increment: step; padding: 12px 12px 12px 44px; position: relative; border-left: 2px solid #e0e0e0; margin-left: 12px; }
+        .flow-step::before { content: counter(step); position: absolute; left: -14px; top: 10px; width: 26px; height: 26px; background: #25F4EE; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+        .flow-step h3 { font-size: 14px; margin-bottom: 4px; }
+        .flow-step p { font-size: 13px; color: #666; margin: 0; }
+        .footer { text-align: center; padding: 24px; color: #999; font-size: 12px; }
+        .footer a { color: #999; }
+        .result-box { background: #1a1a1a; color: #0f0; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; white-space: pre-wrap; margin-top: 12px; display: none; }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="header">
+        <div class="logo">C</div>
         <h1>Crantex Content Publishing</h1>
-        <p>Automated content publishing for TikTok channels. Powered by the TikTok Content Posting API.</p>
-        <div class="links">
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="tos.html">Terms of Service</a>
+    </div>
+
+    <div class="container">
+        <!-- Step 1: Auth -->
+        <div class="card">
+            <h2>🔑 Step 1: Connect TikTok Account</h2>
+            <p>Authorize Crantex to publish content on your behalf using the TikTok Content Posting API.</p>
+            <div id="auth-status" class="status disconnected">
+                <div class="status-dot"></div>
+                <span>Not connected</span>
+            </div>
+            <button class="btn btn-tiktok" onclick="startOAuth()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.84a8.27 8.27 0 004.76 1.5V6.69h-1z"/></svg>
+                Login with TikTok
+            </button>
+            <div id="creator-section" style="display:none; margin-top:16px;">
+                <div class="creator-info">
+                    <img class="avatar" id="creator-avatar" src="" alt="">
+                    <div class="name" id="creator-name"></div>
+                    <div class="username" id="creator-username"></div>
+                </div>
+                <div class="result-box" id="creator-result"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Post -->
+        <div class="card">
+            <h2>📹 Step 2: Publish Content</h2>
+            <p>Upload a video and post it directly to your TikTok account.</p>
+            <div class="form-group">
+                <label>Video Title / Caption</label>
+                <input type="text" id="video-title" placeholder="Check out this amazing #content! 🎬" disabled>
+            </div>
+            <div class="form-group">
+                <label>Privacy Level</label>
+                <select id="privacy-level" disabled>
+                    <option value="PUBLIC_TO_EVERYONE">Public</option>
+                    <option value="MUTUAL_FOLLOW_FRIENDS">Friends</option>
+                    <option value="SELF_ONLY" selected>Private (Sandbox)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Video File (MP4)</label>
+                <input type="file" id="video-file" accept="video/mp4" disabled>
+            </div>
+            <button class="btn btn-post" id="post-btn" onclick="publishVideo()" disabled>
+                🚀 Publish to TikTok
+            </button>
+            <div class="result-box" id="post-result"></div>
+        </div>
+
+        <!-- Integration Flow -->
+        <div class="card">
+            <h2>🔄 Integration Flow</h2>
+            <p>This demo shows the complete end-to-end integration with the TikTok Content Posting API.</p>
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <h3>OAuth 2.0 Authorization</h3>
+                    <p>User clicks "Login with TikTok" → redirected to TikTok OAuth → returns access token</p>
+                </div>
+                <div class="flow-step">
+                    <h3>Query Creator Info</h3>
+                    <p>App calls /v2/post/publish/creator_info/query/ to verify the user and get posting capabilities</p>
+                </div>
+                <div class="flow-step">
+                    <h3>Initialize Video Upload</h3>
+                    <p>App calls /v2/post/publish/video/init/ with video metadata to get upload URL</p>
+                </div>
+                <div class="flow-step">
+                    <h3>Upload Video Chunks</h3>
+                    <p>App uploads the video file to TikTok's upload endpoint</p>
+                </div>
+                <div class="flow-step">
+                    <h3>Content Published</h3>
+                    <p>Video appears on the user's TikTok account with the specified privacy level</p>
+                </div>
+            </div>
         </div>
     </div>
+
+    <div class="footer">
+        <a href="privacy.html">Privacy Policy</a> · <a href="tos.html">Terms of Service</a>
+        <br>© 2026 Crantex Content Publishing
+    </div>
+
+    <script>
+        const CLIENT_KEY = 'awzbis380ul6tjs8';
+        const REDIRECT_URI = window.location.origin + window.location.pathname.replace('index.html', '') + 'callback.html';
+
+        let accessToken = null;
+
+        // Check for token in URL (callback) or localStorage
+        function init() {
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            if (params.get('access_token')) {
+                accessToken = params.get('access_token');
+                localStorage.setItem('tiktok_token', accessToken);
+                window.history.replaceState(null, '', window.location.pathname);
+            } else if (localStorage.getItem('tiktok_token')) {
+                accessToken = localStorage.getItem('tiktok_token');
+            }
+
+            if (accessToken) {
+                showConnected();
+                fetchCreatorInfo();
+            }
+        }
+
+        function startOAuth() {
+            const authUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${CLIENT_KEY}&scope=video.publish&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=demo`;
+            window.location.href = authUrl;
+        }
+
+        function showConnected() {
+            document.getElementById('auth-status').className = 'status connected';
+            document.getElementById('auth-status').innerHTML = '<div class="status-dot"></div><span>Connected ✓</span>';
+            document.getElementById('video-title').disabled = false;
+            document.getElementById('privacy-level').disabled = false;
+            document.getElementById('video-file').disabled = false;
+            document.getElementById('post-btn').disabled = false;
+            document.getElementById('creator-section').style.display = 'block';
+        }
+
+        async function fetchCreatorInfo() {
+            const resultBox = document.getElementById('creator-result');
+            try {
+                const res = await fetch('https://open.tiktokapis.com/v2/post/publish/creator_info/query/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+                resultBox.style.display = 'block';
+                resultBox.textContent = JSON.stringify(data, null, 2);
+
+                if (data.data) {
+                    document.getElementById('creator-avatar').src = data.data.creator_avatar_url || '';
+                    document.getElementById('creator-name').textContent = data.data.creator_nickname || 'Creator';
+                    document.getElementById('creator-username').textContent = '@' + (data.data.creator_username || '');
+                }
+            } catch (e) {
+                resultBox.style.display = 'block';
+                resultBox.textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function publishVideo() {
+            const resultBox = document.getElementById('post-result');
+            resultBox.style.display = 'block';
+            resultBox.textContent = 'Initializing upload...';
+
+            const title = document.getElementById('video-title').value;
+            const privacyLevel = document.getElementById('privacy-level').value;
+            const fileInput = document.getElementById('video-file');
+
+            if (!fileInput.files[0]) {
+                resultBox.textContent = 'Please select a video file first.';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const chunkSize = 10 * 1024 * 1024;
+            const totalChunks = Math.ceil(file.size / chunkSize);
+
+            try {
+                // Step 1: Initialize upload
+                const initRes = await fetch('https://open.tiktokapis.com/v2/post/publish/video/init/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        post_info: {
+                            title: title,
+                            privacy_level: privacyLevel,
+                            disable_duet: false,
+                            disable_comment: false,
+                            disable_stitch: false,
+                            video_cover_timestamp_ms: 1000
+                        },
+                        source_info: {
+                            source: 'FILE_UPLOAD',
+                            video_size: file.size,
+                            chunk_size: chunkSize,
+                            total_chunk_count: totalChunks
+                        }
+                    })
+                });
+                const initData = await initRes.json();
+                resultBox.textContent = 'Init response:\n' + JSON.stringify(initData, null, 2);
+
+                if (initData.data && initData.data.upload_url) {
+                    // Step 2: Upload chunks
+                    for (let i = 0; i < totalChunks; i++) {
+                        const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
+                        resultBox.textContent = `Uploading chunk ${i + 1}/${totalChunks}...`;
+                        
+                        await fetch(initData.data.upload_url, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'video/mp4',
+                                'Content-Range': `bytes ${i * chunkSize}-${Math.min((i + 1) * chunkSize - 1, file.size - 1)}/${file.size}`
+                            },
+                            body: chunk
+                        });
+                    }
+
+                    resultBox.textContent = '✅ Upload complete!\n\nPublish ID: ' + initData.data.publish_id + '\n\nVideo will appear on your TikTok account shortly.';
+                }
+            } catch (e) {
+                resultBox.textContent = 'Error: ' + e.message;
+            }
+        }
+
+        init();
+    </script>
 </body>
 </html>
