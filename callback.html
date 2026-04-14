@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crantex — Authorization Callback</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a; background: #f5f5f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .card { max-width: 480px; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 40px; text-align: center; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #e0e0e0; border-top: 3px solid #25F4EE; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        h1 { font-size: 20px; margin-bottom: 8px; }
+        p { color: #666; font-size: 14px; margin-bottom: 16px; line-height: 1.6; }
+        .success { color: #2e7d32; }
+        .error { color: #c62828; }
+        .result-box { background: #1a1a1a; color: #0f0; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 11px; white-space: pre-wrap; text-align: left; margin-top: 16px; max-height: 200px; overflow-y: auto; }
+        .btn { display: inline-block; padding: 12px 24px; background: #000; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; }
+        .btn:hover { background: #222; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div id="status">
+            <div class="spinner"></div>
+            <h1>Processing Authorization...</h1>
+            <p>Handling TikTok OAuth callback.</p>
+        </div>
+        <div id="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        const CLIENT_KEY = 'awzbis380ul6tjs8';
+
+        async function handleCallback() {
+            const statusEl = document.getElementById('status');
+            const resultEl = document.getElementById('result');
+
+            // Check for authorization code in URL params
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const state = params.get('state');
+            const error = params.get('error');
+            const errorDesc = params.get('error_description');
+
+            if (error) {
+                statusEl.innerHTML = `
+                    <h1 class="error">❌ Authorization Denied</h1>
+                    <p>${errorDesc || error}</p>
+                    <a href="/" class="btn">Try Again</a>
+                `;
+                return;
+            }
+
+            if (!code) {
+                // Check for token in hash (implicit flow)
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = hashParams.get('access_token');
+                
+                if (accessToken) {
+                    localStorage.setItem('tiktok_token', accessToken);
+                    statusEl.innerHTML = `
+                        <h1 class="success">✅ Connected!</h1>
+                        <p>Your TikTok account has been authorized. Redirecting...</p>
+                    `;
+                    setTimeout(() => { window.location.href = '/Crantex-Content-Publishing/'; }, 2000);
+                    return;
+                }
+
+                statusEl.innerHTML = `
+                    <h1 class="error">❌ No Authorization Code</h1>
+                    <p>No code or token received from TikTok.</p>
+                    <a href="/" class="btn">Try Again</a>
+                `;
+                return;
+            }
+
+            // We have an auth code — store it and redirect
+            localStorage.setItem('tiktok_code', code);
+            statusEl.innerHTML = `
+                <h1 class="success">✅ Authorization Successful!</h1>
+                <p>Your TikTok account has been authorized. Redirecting to the app...</p>
+                <div class="result-box">Code: ${code.substring(0, 20)}...</div>
+            `;
+            setTimeout(() => { window.location.href = '/Crantex-Content-Publishing/'; }, 3000);
+        }
+
+        handleCallback();
+    </script>
+</body>
+</html>
